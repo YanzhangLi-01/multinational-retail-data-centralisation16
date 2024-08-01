@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 class DataCleaning:
     def __init__(self):
@@ -21,20 +22,34 @@ class DataCleaning:
         # Remove rows with NULL values
         df = df.dropna()
 
-        # Convert data columns and drop rows with any error values
-        df['expiry_date'] = pd.to_datetime(df['expiry_date'], errors='coerce')
-        df = df.dropna(subset=['expiry_date'])
-
-        # Ensure card numbers are treated as strings to preserve leading zeros
-        df['card_number'] = df['card_number'].astype(str)
+        return df
     
     def clean_store_data(self, df):
-        # Remove rows with NULL values
-        df = df.dropna()
-
-        # Drop rows with invalid dates
-        df['opening_date'] = pd.to_datetime(df['opening_date'], errors='coerce')
+        # Drop rows with any NULL values
         df = df.dropna(subset=['opening_date'])
+        
+        # Correct the 'store_type' values
+        df['store_type'] = df['store_type'].replace('eeAmerica', 'America')
+        df['store_type'] = df['store_type'].replace('eeEurope', 'Europe')
+        
+        # Function to parse different date formats
+        def parse_date(date_str):
+            date_formats = ['%d/%m/%Y', '%B %Y %d', '%Y %B %d']
+            for fmt in date_formats:
+                try:
+                    return pd.to_datetime(date_str, format=fmt, errors='coerce')
+                except ValueError:
+                    continue
+            return np.nan
+        
+        # Convert 'opening_date' to datetime using the custom parsing function
+        df['opening_date'] = df['opening_date'].apply(parse_date)
+
+        # Drop rows with any NULL values after date parsing
+        df = df.dropna(subset=['opening_date'])
+
+        # Format the 'opening_date' to 'YYYY/M/D'
+        df['opening_date'] = df['opening_date'].dt.strftime('%Y/%-m/%-d')
 
         return df
     

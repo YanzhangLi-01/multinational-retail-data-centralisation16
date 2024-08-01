@@ -14,18 +14,18 @@ def main():
     tables = rds_connector.list_db_tables(rds_engine)
     print("Tables in the AWS RDS database:", tables)
 
-    # Extract, clean, and upload user data
-    user_data_df = data_extractor.read_rds_table(rds_connector, 'legacy_users')
-    cleaned_user_data_df = data_cleaning.clean_user_data(user_data_df)
-    local_connector.upload_to_db(cleaned_user_data_df, 'dim_users')
-    print("User data cleaned and uploaded to local PostgreSQL successfully.")
+#    # Extract, clean, and upload user data
+#    user_data_df = data_extractor.read_rds_table(rds_connector, 'legacy_users')
+#    cleaned_user_data_df = data_cleaning.clean_user_data(user_data_df)
+#    local_connector.upload_to_db(cleaned_user_data_df, 'dim_users')
+#    print("User data cleaned and uploaded to local PostgreSQL successfully.")
 
-    # Extract, clean, and upload card data
-    pdf_link = 'https://data-handling-public.s3.eu-west-1.amazonaws.com/card_details.pdf'
-    card_data_df = data_extractor.retrieve_pdf_data(pdf_link)
-    cleaned_card_data_df = data_cleaning.clean_card_data(card_data_df)
-    local_connector.upload_to_db(cleaned_card_data_df, 'dim_card_details')
-    print("Card data cleaned and uploaded to local PostgreSQL successfully.")
+#    # Extract, clean, and upload card data
+#    pdf_link = 'https://data-handling-public.s3.eu-west-1.amazonaws.com/card_details.pdf'
+#    card_data_df = data_extractor.retrieve_pdf_data(pdf_link)
+#    cleaned_card_data_df = data_cleaning.clean_card_data(card_data_df)
+#    local_connector.upload_to_db(cleaned_card_data_df, 'dim_card_details')
+#    print("Card data cleaned and uploaded to local PostgreSQL successfully.")
 
     # Extract, clean, and upload store data
     api_key = 'yFBQbwXe9J3sd6zWVAMrK6lcxxr0q1lr2PT6DDMX'
