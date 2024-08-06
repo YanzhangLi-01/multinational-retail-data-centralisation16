@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import re
 
 class DataCleaning:
     def __init__(self):
@@ -21,62 +22,73 @@ class DataCleaning:
     def clean_card_data(self, df):
         # Remove rows with NULL values
         df = df.dropna()
-
+        
         return df
     
     def clean_store_data(self, df):
-        # Drop rows with any NULL values
+        # Drop rows with any NULL values in 'opening_date'
         df = df.dropna(subset=['opening_date'])
         
         # Correct the 'store_type' values
-        df['store_type'] = df['store_type'].replace('eeAmerica', 'America')
-        df['store_type'] = df['store_type'].replace('eeEurope', 'Europe')
-        
-        # Function to parse different date formats
-        def parse_date(date_str):
-            date_formats = ['%d/%m/%Y', '%B %Y %d', '%Y %B %d']
-            for fmt in date_formats:
-                try:
-                    return pd.to_datetime(date_str, format=fmt, errors='coerce')
-                except ValueError:
-                    continue
-            return np.nan
-        
-        # Convert 'opening_date' to datetime using the custom parsing function
-        df['opening_date'] = df['opening_date'].apply(parse_date)
+        df['store_type'] = df['store_type'].replace({'eeAmerica': 'America', 'eeEurope': 'Europe'})
 
-        # Drop rows with any NULL values after date parsing
-        df = df.dropna(subset=['opening_date'])
+        # Drop columns with any NULL values
+        df = df.dropna(axis=1, how='any')
+        
+        # Define a function to identify nonsensical strings
+        def is_nonsense(value):
+            if isinstance(value, str):
+                # Define a regex pattern for nonsensical strings (adjust as needed)
+                pattern = r'^[A-Z0-9]{8,}$' 
+                return bool(re.match(pattern, value))
+            return False
+        
+        # Drop rows containing nonsensical strings
+        nonsensical_mask = df.applymap(is_nonsense)
+        df = df[~nonsensical_mask.any(axis=1)]
 
-        # Format the 'opening_date' to 'YYYY/M/D'
-        df['opening_date'] = df['opening_date'].dt.strftime('%Y/%-m/%-d')
+        # Convert 'opening_date' to datetime, coerce errors to NaT (Not a Time)
+    #    df['opening_date'] = pd.to_datetime(df['opening_date'], format='%B %Y %d') #date_formats = ['%d/%m/%Y', '%B %Y %d', '%Y %B %d']
 
         return df
     
     def convert_product_weights(self, df):
         def convert_weight(weight):
             if isinstance(weight, str):
-                weight = weight.lower()
-                if 'kg' in weight:
-                    return float(weight.replace('kg', '').strip())
-                elif 'g' in weight:
-                    return float(weight.replace('g', '').strip()) / 1000
-                elif 'ml' in weight:
-                    return float(weight.replace('ml', '').strip()) / 1000
-                elif 'l' in weight:
-                    return float(weight.replace('l', '').strip())
-                else:
-                    return None
-            else:
-                return None  # or raise an error if needed, or handle differently
-            
+                weight = weight.lower().strip()
+
+                # Handle cases like '12 x 100'
+                if ' x ' in weight:
+                    parts = weight.split(' x ')
+                    if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
+                        total_weight = int(parts[0]) * int(parts[1])
+                        return total_weight / 1000  # assuming the weight is in grams
+
+                # Remove units and convert to kg
+                for unit in ['kg', 'g', 'ml', 'l']:
+                    if unit in weight:
+                        number = weight.replace(unit, '').strip()
+                        try:
+                            value = float(number)
+                            if unit == 'kg' or unit == 'l':
+                                return value
+                            else:  # 'g' or 'ml'
+                                return value / 1000
+                        except ValueError:
+                            return None
+            return None
+
         df['weight'] = df['weight'].apply(convert_weight)
+
+        # Remove any rows with NULL values in the weight column
+        df = df.dropna(subset=['weight'])
+
         return df
     
-    def clean_products_data(self, df):
-        df = df.dropna(subset=['weight'])
-        df = df[df['weight'] > 0]
-        return df
+#    def clean_products_data(self, df):
+#        df = df.dropna(subset=['weight'])
+#        df = df[df['weight'] > 0]
+#        return df
     
     def clean_orders_data(self, df):
         columns_to_drop = ['first_name', 'last_name', '1']
@@ -86,9 +98,9 @@ class DataCleaning:
     
     def clean_date_details_data(self, df):
         df = df.dropna()
-        df['date'] = pd.to_datetime(df['date'], errors='coerce')
-        df = df.dropna(subset=['date'])
-        df['time'] = pd.to_datetime(df['time'], format='%H:%M:%S', errors='coerce').dt.time
-        df = df.dropna(subset=['time'])
+#        df['date'] = pd.to_datetime(df['date'], errors='coerce')
+#        df = df.dropna(subset=['date'])
+#        df['time'] = pd.to_datetime(df['time'], format='%H:%M:%S', errors='coerce').dt.time
+#        df = df.dropna(subset=['time'])
         return df
 

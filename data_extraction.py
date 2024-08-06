@@ -4,6 +4,7 @@ import requests
 import boto3
 from io import StringIO
 import json
+from urllib.parse import urlparse
 
 class DataExtractor:
     def __init__(self):
@@ -27,14 +28,16 @@ class DataExtractor:
         else:
             response.raise_for_status()
 
-    def retrieve_stores_data(self, store_endpoint, headers):
+    def retrieve_stores_data(self, store_endpoint, headers, num_stores):
         store_data = []
-        for store_number in range(1, 451):
+        for store_number in range(1, num_stores):
             response = requests.get(store_endpoint.format(store_number=store_number), headers=headers)
             if response.status_code == 200:
+                #print(response.json())
                 store_data.append(response.json())
             else:
                 response.raise_for_status()
+        
         return pd.DataFrame(store_data)
 
     def extract_from_s3(self, s3_address):
@@ -56,11 +59,20 @@ class DataExtractor:
 
     def extract_json_from_s3(self, s3_url):
         s3 = boto3.client('s3')
-        bucket_name = s3_url.split('/')[2]
-        file_key = '/'.join(s3_url.split('/')[3:])
-        
+
+        # Parse the S3 URL
+        parsed_url = urlparse(s3_url)
+        bucket_name = parsed_url.netloc.split('.')[0]
+        file_key = parsed_url.path.lstrip('/')
+
+        # Get the object from S3
         obj = s3.get_object(Bucket=bucket_name, Key=file_key)
         data = json.loads(obj['Body'].read().decode('utf-8'))
         
+        # Normalize JSON data to a pandas DataFrame
         df = pd.json_normalize(data)
+
+        # Transpose the DataFrame
+        df = df.transpose()
+
         return df
