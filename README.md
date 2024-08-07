@@ -92,7 +92,7 @@ pip install pandas
      - Monthly sales figures
 ## File Structure
 ```python
-multinational_retail_data_centralisation/
+multinational-retail-data-centralisation16/
 │
 ├── MRDC_project
         ├── .gitignore
