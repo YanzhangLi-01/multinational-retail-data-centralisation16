@@ -58,6 +58,7 @@ class DataExtractor:
         return df
 
     def extract_json_from_s3(self, s3_url):
+        # Initialize the S3 client
         s3 = boto3.client('s3')
 
         # Parse the S3 URL
@@ -67,12 +68,30 @@ class DataExtractor:
 
         # Get the object from S3
         obj = s3.get_object(Bucket=bucket_name, Key=file_key)
-        data = json.loads(obj['Body'].read().decode('utf-8'))
+        json_content = obj['Body'].read().decode('utf-8')
         
-        # Normalize JSON data to a pandas DataFrame
-        df = pd.json_normalize(data)
-
-        # Transpose the DataFrame
-        df = df.transpose()
+        # Directly use json_content if it's already a dictionary
+        try:
+            # Attempt to convert JSON string to dictionary
+            data = json.loads(json_content)
+        except json.JSONDecodeError:
+            # If json_content is already a dictionary, use it directly
+            data = json_content
+        
+        # Check if data is a dictionary
+        if not isinstance(data, dict):
+            raise TypeError("The fetched data is not in the expected dictionary format.")
+        
+        # Check if the JSON data has the expected keys
+        expected_keys = ['timestamp', 'month', 'year', 'day', 'time_period', 'date_uuid']
+        if not all(k in data for k in expected_keys):
+            raise ValueError("JSON data is missing one or more required keys.")
+        
+        # Convert the JSON data to a pandas DataFrame
+        # Transpose the JSON data to match the format
+        df = pd.DataFrame({key: pd.Series(value) for key, value in data.items()})
+        
+        # Reset index to ensure a numeric index
+        df.reset_index(drop=True, inplace=True)
 
         return df

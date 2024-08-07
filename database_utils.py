@@ -26,12 +26,7 @@ class DatabaseConnector:
 
     def upload_to_db(self, df, table_name):
         engine = self.init_db_engine()
-    
-#        if df is not None:
-#            df.to_sql(table_name, engine, if_exists='replace', index=False)
-#        else:
-#            print("Error: DataFrame is None, cannot upload to the database.")
-            
+           
         # Sanity check: print the DataFrame before uploading
         print("Sanity Check: DataFrame to be uploaded:")
         print(df)

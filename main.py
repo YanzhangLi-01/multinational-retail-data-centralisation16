@@ -15,11 +15,12 @@ def main():
     tables = rds_connector.list_db_tables(rds_engine)
     print("Tables in the AWS RDS database:", tables)
 
-#    # Extract, clean, and upload user data
+    # Extract, clean, and upload user data
     user_data_df = data_extractor.read_rds_table(rds_connector, 'legacy_users')
     cleaned_user_data_df = data_cleaning.clean_user_data(user_data_df)
     local_connector.upload_to_db(cleaned_user_data_df, 'dim_users')
     print("User data cleaned and uploaded to local PostgreSQL successfully.")
+
     # Extract, clean, and upload card data
     pdf_link = 'https://data-handling-public.s3.eu-west-1.amazonaws.com/card_details.pdf'
     card_data_df = data_extractor.retrieve_pdf_data(pdf_link)
@@ -41,7 +42,7 @@ def main():
 #    print(store_data_df)
 #    print(len(store_data_df))
 #    store_data_df.to_csv("Raw_stroe_data.csv", index=False)
-    store_data_df = pd.read_csv('Raw_stroe_data.csv')
+#    store_data_df = pd.read_csv('Raw_stroe_data.csv')
     cleaned_store_data_df = data_cleaning.clean_store_data(store_data_df)
     local_connector.upload_to_db(cleaned_store_data_df, 'dim_store_details')
     print("Store data cleaned and uploaded to local PostgreSQL successfully.")
@@ -61,11 +62,13 @@ def main():
     local_connector.upload_to_db(cleaned_orders_data_df, 'orders_table')
     print("Orders data cleaned and uploaded to local PostgreSQL successfully.")
 
-#    # Extract, clean, and upload date details data
+    # Extract, clean, and upload date details data
     json_url = 'https://data-handling-public.s3.eu-west-1.amazonaws.com/date_details.json'
     date_details_df = data_extractor.extract_json_from_s3(json_url)
+#    date_details_df.to_csv("raw_date_times.csv", index=False)
     cleaned_date_details_df = data_cleaning.clean_date_details_data(date_details_df)
     local_connector.upload_to_db(cleaned_date_details_df, 'dim_date_times')
+    print(date_details_df.head())
     print("Date details data cleaned and uploaded to local PostgreSQL successfully.")
 
 if __name__ == "__main__":
